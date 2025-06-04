@@ -1,31 +1,32 @@
-// popup.js
-document.addEventListener('DOMContentLoaded', () => {
-    const startButton = document.getElementById('startButton');
-    const stopButton = document.getElementById('stopButton');
-    const loadButton = document.getElementById('loadButton');
-    const traceOutput = document.getElementById('traceOutput');
+let isRecording = false;
+
+document.getElementById('startRecording').addEventListener('click', async () => {
+  isRecording = true;
+  updateButtonStates();
   
-    startButton.addEventListener('click', () => {
-      chrome.runtime.sendMessage({ action: 'startRecording' }, (response) => {
-        console.log('Start recording message sent.');
-        traceOutput.value = '記録を開始しました...';
-      });
-    });
+  // 記録開始のメッセージをbackgroundスクリプトに送信
+  chrome.runtime.sendMessage({ action: 'startRecording' });
   
-    stopButton.addEventListener('click', () => {
-      chrome.runtime.sendMessage({ action: 'stopRecording' }, (response) => {
-        console.log('Stop recording message sent.');
-        traceOutput.value = '記録を停止しました。';
-      });
-    });
+  document.getElementById('status').textContent = '記録中...';
+});
+
+document.getElementById('stopRecording').addEventListener('click', async () => {
+  isRecording = false;
+  updateButtonStates();
   
-    loadButton.addEventListener('click', () => {
-      chrome.runtime.sendMessage({ action: 'loadTrace' }, (response) => {
-        if (response && response.data) {
-          traceOutput.value = JSON.stringify(response.data, null, 2);
-        } else {
-          traceOutput.value = '保存された記録がありません。';
-        }
-      });
-    });
-  });
+  // 記録停止のメッセージをbackgroundスクリプトに送信
+  chrome.runtime.sendMessage({ action: 'stopRecording' });
+  
+  document.getElementById('status').textContent = '記録停止';
+});
+
+document.getElementById('downloadJSON').addEventListener('click', async () => {
+  // 記録データのダウンロードをbackgroundスクリプトに要求
+  chrome.runtime.sendMessage({ action: 'downloadJSON' });
+});
+
+function updateButtonStates() {
+  document.getElementById('startRecording').disabled = isRecording;
+  document.getElementById('stopRecording').disabled = !isRecording;
+  document.getElementById('downloadJSON').disabled = isRecording;
+}
