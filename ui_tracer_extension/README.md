@@ -27,8 +27,11 @@ sequenceDiagram
     Note over C: ユーザーが別のボタンをクリック
     C->>B: { action: 'recordAction', data: {...} }
     Note over B: if (isRecording) { 記録する }
-    
+```
+
 **JSON取得情報**
+
+
 html例
 ```
 <button 
