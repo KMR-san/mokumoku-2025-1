@@ -9,11 +9,46 @@ chrome.runtime.sendMessage({
 
 // UI操作を監視して記録する
 function recordUIAction(action) {
+  // 現在のページ情報を追加
+  const pageInfo = {
+    url: window.location.href,
+    title: document.title,
+    path: window.location.pathname
+  };
+
   chrome.runtime.sendMessage({
     type: 'UI_ACTION',
-    data: action
+    data: {
+      ...action,
+      page: pageInfo
+    }
   });
 }
+
+// ページ情報を記録
+function recordPageView() {
+  const action = {
+    type: 'pageview',
+    url: window.location.href,
+    title: document.title,
+    path: window.location.pathname,
+    timestamp: new Date().toISOString()
+  };
+  recordUIAction(action);
+}
+
+// ページ読み込み時に記録
+window.addEventListener('load', recordPageView);
+
+// History API経由のページ遷移を検知
+let lastUrl = window.location.href;
+new MutationObserver(() => {
+  const currentUrl = window.location.href;
+  if (currentUrl !== lastUrl) {
+    lastUrl = currentUrl;
+    recordPageView();
+  }
+}).observe(document, { subtree: true, childList: true });
 
 // 要素のイベントハンドラを取得する
 function getElementEventHandlers(element) {
@@ -54,7 +89,6 @@ function getElementDetails(element) {
     attributes: {
       role: element.getAttribute('role') || '',
       ariaLabel: element.getAttribute('aria-label') || '',
-      // その他の重要な属性があれば追加
     }
   };
 }
@@ -91,17 +125,6 @@ document.addEventListener('submit', (event) => {
     type: 'submit',
     ...getElementDetails(form),
     formData: Object.fromEntries(formData),
-    timestamp: new Date().toISOString()
-  };
-  recordUIAction(action);
-});
-
-// ページ遷移の監視
-window.addEventListener('load', () => {
-  const action = {
-    type: 'pageview',
-    url: window.location.href,
-    title: document.title,
     timestamp: new Date().toISOString()
   };
   recordUIAction(action);

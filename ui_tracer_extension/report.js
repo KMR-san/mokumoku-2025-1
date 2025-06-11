@@ -1,17 +1,29 @@
 // UI操作の説明を生成する
 function generateActionDescription(action) {
+  let description = '';
+  
+  // ページ情報の追加（すべての操作に共通）
+  const pageInfo = action.page ? 
+    `\n   - ページ: ${action.page.title || action.page.url}` : '';
+
   switch (action.type) {
     case 'click':
-      return generateClickDescription(action);
+      description = generateClickDescription(action);
+      break;
     case 'input':
-      return generateInputDescription(action);
+      description = generateInputDescription(action);
+      break;
     case 'submit':
-      return generateSubmitDescription(action);
+      description = generateSubmitDescription(action);
+      break;
     case 'pageview':
-      return generatePageViewDescription(action);
+      description = generatePageViewDescription(action);
+      break;
     default:
-      return `不明な操作が実行されました: ${action.type}`;
+      description = `不明な操作が実行されました: ${action.type}`;
   }
+
+  return description + pageInfo;
 }
 
 // クリック操作の説明を生成
@@ -84,7 +96,9 @@ function generateSubmitDescription(action) {
 
 // ページ遷移の説明を生成
 function generatePageViewDescription(action) {
-  return `ページ「${action.title || action.url}」を表示`;
+  const title = action.title || '';
+  const url = action.url || '';
+  return `ページ「${title || url}」を表示`;
 }
 
 // タイムスタンプをフォーマット
