@@ -6,34 +6,45 @@
     body {
       width: 300px;
       padding: 10px;
-      font-family: Arial, sans-serif;
+      font-family: sans-serif;
+    }
+    .button-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     button {
-      width: 100%;
       padding: 8px;
-      margin: 5px 0;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
       border-radius: 4px;
+      border: 1px solid #ccc;
+      background: #f0f0f0;
       cursor: pointer;
     }
     button:disabled {
-      background-color: #cccccc;
+      opacity: 0.5;
       cursor: not-allowed;
     }
+    button:not(:disabled):hover {
+      background: #e0e0e0;
+    }
     #status {
-      margin-top: 10px;
+      margin-bottom: 10px;
+      padding: 5px;
+      border-radius: 4px;
+      background: #f8f8f8;
       text-align: center;
-      color: #666;
     }
   </style>
 </head>
 <body>
-  <button id="startRecording">記録開始</button>
-  <button id="stopRecording" disabled>記録停止</button>
-  <button id="downloadJSON" disabled>JSONをダウンロード</button>
-  <div id="status"></div>
+  <div id="status">記録停止</div>
+  <div class="button-container">
+    <button id="startRecording">記録開始</button>
+    <button id="stopRecording" disabled>記録停止</button>
+    <button id="downloadJSON" disabled>JSONダウンロード</button>
+    <button id="downloadReport" disabled>レポートダウンロード</button>
+  </div>
+  <script src="report.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

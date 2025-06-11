@@ -64,18 +64,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'getState':
           sendResponse({ isRecording });
           break;
+
+        case 'getRecordedActions':
+          sendResponse({ actions: recordedActions });
+          break;
       }
     } catch (error) {
       console.error('メッセージ処理中にエラーが発生しました:', error);
       // エラーレスポンスはpopup.jsからのメッセージに対してのみ送信
-      if (['startRecording', 'stopRecording', 'downloadJSON', 'getState'].includes(message.action)) {
+      if (['startRecording', 'stopRecording', 'downloadJSON', 'getState', 'getRecordedActions'].includes(message.action)) {
         sendResponse({ success: false, error: error.message });
       }
     }
   })();
   
   // popup.jsからの非同期メッセージに対してのみtrueを返す
-  return ['startRecording', 'stopRecording', 'downloadJSON', 'getState'].includes(message.action);
+  return ['startRecording', 'stopRecording', 'downloadJSON', 'getState', 'getRecordedActions'].includes(message.action);
 });
 
 // content.jsからのメッセージ（レスポンス不要）
