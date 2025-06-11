@@ -1,28 +1,52 @@
 let isRecording = false;
 
-document.getElementById('startRecording').addEventListener('click', async () => {
-  isRecording = true;
+// ポップアップを開いたときに現在の状態を取得
+async function initializeState() {
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'getState' });
+    isRecording = response.isRecording;
+    updateUI();
+  } catch (error) {
+    console.error('状態の取得に失敗しました:', error);
+    document.getElementById('status').textContent = 'エラーが発生しました';
+  }
+}
+
+function updateUI() {
+  document.getElementById('status').textContent = isRecording ? '記録中...' : '記録停止';
   updateButtonStates();
-  
-  // 記録開始のメッセージをbackgroundスクリプトに送信
-  chrome.runtime.sendMessage({ action: 'startRecording' });
-  
-  document.getElementById('status').textContent = '記録中...';
+}
+
+// 初期化を実行
+document.addEventListener('DOMContentLoaded', initializeState);
+
+document.getElementById('startRecording').addEventListener('click', async () => {
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'startRecording' });
+    isRecording = response.isRecording;
+    updateUI();
+  } catch (error) {
+    console.error('記録の開始に失敗しました:', error);
+  }
 });
 
 document.getElementById('stopRecording').addEventListener('click', async () => {
-  isRecording = false;
-  updateButtonStates();
-  
-  // 記録停止のメッセージをbackgroundスクリプトに送信
-  chrome.runtime.sendMessage({ action: 'stopRecording' });
-  
-  document.getElementById('status').textContent = '記録停止';
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'stopRecording' });
+    isRecording = response.isRecording;
+    updateUI();
+  } catch (error) {
+    console.error('記録の停止に失敗しました:', error);
+  }
 });
 
 document.getElementById('downloadJSON').addEventListener('click', async () => {
-  // 記録データのダウンロードをbackgroundスクリプトに要求
-  chrome.runtime.sendMessage({ action: 'downloadJSON' });
+  try {
+    await chrome.runtime.sendMessage({ action: 'downloadJSON' });
+    updateUI();
+  } catch (error) {
+    console.error('JSONのダウンロードに失敗しました:', error);
+  }
 });
 
 function updateButtonStates() {
