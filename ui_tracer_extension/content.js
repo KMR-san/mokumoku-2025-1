@@ -7,59 +7,102 @@ chrome.runtime.sendMessage({
   }
 });
 
+// UI操作を監視して記録する
+function recordUIAction(action) {
+  chrome.runtime.sendMessage({
+    type: 'UI_ACTION',
+    data: action
+  });
+}
+
+// 要素のイベントハンドラを取得する
+function getElementEventHandlers(element) {
+  const handlers = {};
+  // onclick属性を取得
+  if (element.getAttribute('onclick')) {
+    handlers.onclick = element.getAttribute('onclick');
+  }
+  // href属性を取得（aタグの場合）
+  if (element.tagName === 'A' && element.getAttribute('href')) {
+    handlers.href = element.getAttribute('href');
+  }
+  // form要素のaction属性を取得
+  if (element.tagName === 'FORM' && element.getAttribute('action')) {
+    handlers.formAction = element.getAttribute('action');
+  }
+  // data-*属性からイベントに関連する情報を取得
+  Array.from(element.attributes)
+    .filter(attr => attr.name.startsWith('data-'))
+    .forEach(attr => {
+      handlers[attr.name] = attr.value;
+    });
+  
+  return handlers;
+}
+
+// 要素の詳細情報を取得
+function getElementDetails(element) {
+  return {
+    tagName: element.tagName.toLowerCase(),
+    elementType: element.type || '',  // button, submit, textなど
+    id: element.id || '',
+    className: element.className || '',
+    text: element.textContent?.trim() || '',
+    value: element.value || '',
+    name: element.name || '',  // form要素のname属性
+    handlers: getElementEventHandlers(element),
+    attributes: {
+      role: element.getAttribute('role') || '',
+      ariaLabel: element.getAttribute('aria-label') || '',
+      // その他の重要な属性があれば追加
+    }
+  };
+}
+
 // クリックイベントの監視
 document.addEventListener('click', (event) => {
-  const element = event.target;
-  
-  // ボタンクリックの記録
-  if (element.tagName === 'BUTTON' || 
-      (element.tagName === 'INPUT' && element.type === 'button') ||
-      element.role === 'button') {
-    chrome.runtime.sendMessage({
-      action: 'recordAction',
-      data: {
-        type: 'buttonClick',
-        text: element.textContent || element.value,
-        elementType: element.tagName.toLowerCase(),
-        id: element.id,
-        className: element.className
-      }
-    });
+  const target = event.target;
+  const action = {
+    type: 'click',
+    ...getElementDetails(target),
+    timestamp: new Date().toISOString()
+  };
+  recordUIAction(action);
+});
+
+// 入力イベントの監視
+document.addEventListener('input', (event) => {
+  const target = event.target;
+  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+    const action = {
+      type: 'input',
+      ...getElementDetails(target),
+      timestamp: new Date().toISOString()
+    };
+    recordUIAction(action);
   }
 });
 
-// フォーカスイベントの監視
-document.addEventListener('focus', (event) => {
-  const element = event.target;
-  
-  // テキスト入力要素の選択を記録
-  if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-    chrome.runtime.sendMessage({
-      action: 'recordAction',
-      data: {
-        type: 'inputFocus',
-        elementType: element.tagName.toLowerCase(),
-        inputType: element.type,
-        id: element.id,
-        className: element.className
-      }
-    });
-  }
-}, true);
+// フォーム送信の監視
+document.addEventListener('submit', (event) => {
+  const form = event.target;
+  const formData = new FormData(form);
+  const action = {
+    type: 'submit',
+    ...getElementDetails(form),
+    formData: Object.fromEntries(formData),
+    timestamp: new Date().toISOString()
+  };
+  recordUIAction(action);
+});
 
 // ページ遷移の監視
-let lastUrl = window.location.href;
-new MutationObserver(() => {
-  const currentUrl = window.location.href;
-  if (currentUrl !== lastUrl) {
-    chrome.runtime.sendMessage({
-      action: 'recordAction',
-      data: {
-        type: 'navigation',
-        fromUrl: lastUrl,
-        toUrl: currentUrl
-      }
-    });
-    lastUrl = currentUrl;
-  }
-}).observe(document, { subtree: true, childList: true });
+window.addEventListener('load', () => {
+  const action = {
+    type: 'pageview',
+    url: window.location.href,
+    title: document.title,
+    timestamp: new Date().toISOString()
+  };
+  recordUIAction(action);
+});

@@ -51,16 +51,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           
         // popup.jsからのメッセージ（レスポンスが必要）
         case 'downloadJSON':
-          const blob = new Blob([JSON.stringify(recordedActions, null, 2)], {
-            type: 'application/json'
-          });
-          const url = URL.createObjectURL(blob);
+          const jsonString = JSON.stringify(recordedActions, null, 2);
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
           await chrome.downloads.download({
-            url: url,
-            filename: `ui-trace-${new Date().toISOString()}.json`,
+            url: 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonString),
+            filename: `ui-trace-${timestamp}.json`,
             saveAs: true
           });
-          sendResponse({ isRecording });
+          sendResponse({ success: true });
           break;
 
         case 'getState':
@@ -84,11 +82,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   (async () => {
     try {
-      if (isRecording) {
-        recordedActions.push({
+      console.log('content.jsからメッセージを受信:', message);
+      if (message.type === 'UI_ACTION' && isRecording) {
+        const action = {
           timestamp: new Date().toISOString(),
+          url: sender.tab?.url || '',
           ...message.data
-        });
+        };
+        console.log('記録するアクション:', action);
+        recordedActions.push(action);
         await chrome.storage.local.set({ recordedActions });
       }
     } catch (error) {
