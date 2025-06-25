@@ -27,7 +27,7 @@ public class Issue {
 		return title;
 	}
 
-	public void setTitle(String Title){
+	public void setTitle(String title){
 		this.title = title;
 	}
 
